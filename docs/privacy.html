@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Pinterest MCP Server</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #fff;
+      color: #111;
+      line-height: 1.7;
+    }
+
+    header {
+      background: #e60023;
+      color: #fff;
+      padding: 32px 24px;
+    }
+
+    header a {
+      color: rgba(255,255,255,.8);
+      text-decoration: none;
+      font-size: .9rem;
+    }
+    header a:hover { text-decoration: underline; }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-top: 12px;
+    }
+
+    header p {
+      font-size: .9rem;
+      opacity: .8;
+      margin-top: 4px;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 36px 0 10px;
+      color: #111;
+    }
+
+    p { margin-bottom: 12px; color: #333; }
+
+    ul {
+      margin: 8px 0 12px 20px;
+      color: #333;
+    }
+
+    ul li { margin-bottom: 6px; }
+
+    .highlight {
+      background: #fff8f8;
+      border-left: 3px solid #e60023;
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+      font-size: .95rem;
+      color: #333;
+    }
+
+    a { color: #e60023; }
+
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      font-size: .85rem;
+      color: #888;
+      border-top: 1px solid #eee;
+    }
+
+    footer a { color: #e60023; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="https://sapyx.github.io/pinterest-mcp/">&larr; Back to Pinterest MCP Server</a>
+  <h1>Privacy Policy</h1>
+  <p>Last updated: February 2026</p>
+</header>
+
+<main>
+
+  <div class="highlight">
+    Pinterest MCP Server is a personal productivity tool. It does not collect, sell, or share your personal data. All Pinterest data stays between your device and Pinterest's official API.
+  </div>
+
+  <h2>1. What is this app?</h2>
+  <p>Pinterest MCP Server is an open-source tool that connects Claude AI (by Anthropic) to the Pinterest API v5 via the Model Context Protocol (MCP). It allows users to browse, create, and manage their own Pinterest boards and pins through a conversational interface.</p>
+  <p>It is not a commercial product. It is developed and maintained by Anne Sapyx for personal use.</p>
+
+  <h2>2. Data we collect</h2>
+  <p>The only data stored by this app are the OAuth authentication tokens required to access the Pinterest API on your behalf:</p>
+  <ul>
+    <li>Pinterest access token</li>
+    <li>Pinterest refresh token</li>
+    <li>Token expiry timestamps</li>
+    <li>Granted OAuth scopes</li>
+  </ul>
+  <p>These tokens are saved <strong>locally on your own machine</strong> at <code>~/.mcp-credentials/pinterest-tokens.json</code> with restricted file permissions (readable only by your user account). They are never uploaded to any server.</p>
+
+  <h2>3. Data we do NOT collect</h2>
+  <p>This app does <strong>not</strong>:</p>
+  <ul>
+    <li>Collect your name, email address, or any personally identifiable information</li>
+    <li>Store any Pinterest content (pins, boards, images, descriptions)</li>
+    <li>Use cookies or any tracking technologies</li>
+    <li>Send data to any third party other than Pinterest's official API</li>
+    <li>Log or retain your Pinterest activity</li>
+    <li>Run any backend server or database</li>
+  </ul>
+
+  <h2>4. How we use Pinterest data</h2>
+  <p>API calls are made exclusively to <code>https://api.pinterest.com/v5</code> using your own credentials, on your behalf, in response to your direct requests. No Pinterest data is retained after the API response is shown to you.</p>
+
+  <h2>5. Data sharing</h2>
+  <p>We do not share any data with third parties. The only external service this app communicates with is Pinterest (<a href="https://policy.pinterest.com/privacy-policy" target="_blank">Pinterest Privacy Policy</a>).</p>
+
+  <h2>6. Data storage and security</h2>
+  <p>OAuth tokens are stored locally on your device with <code>0o600</code> file permissions (owner read/write only). No data is stored on remote servers. You can delete the token file at any time by removing <code>~/.mcp-credentials/pinterest-tokens.json</code>.</p>
+
+  <h2>7. Your rights</h2>
+  <p>Since no personal data is collected or stored by us, there is no data to access, correct, or delete on our end. To revoke this app's access to your Pinterest account:</p>
+  <ul>
+    <li>Go to your Pinterest account settings</li>
+    <li>Navigate to <strong>Security &amp; privacy → Apps with access</strong></li>
+    <li>Remove Pinterest MCP Server</li>
+  </ul>
+
+  <h2>8. Children's privacy</h2>
+  <p>This app is not directed at children under 13. We do not knowingly collect any information from children.</p>
+
+  <h2>9. Changes to this policy</h2>
+  <p>If this policy is updated, the new version will be published at this URL with a revised date.</p>
+
+  <h2>10. Contact</h2>
+  <p>For any questions or concerns about this privacy policy, please open an issue on GitHub:</p>
+  <p><a href="https://github.com/sapyx/pinterest-mcp/issues" target="_blank">github.com/sapyx/pinterest-mcp/issues</a></p>
+  <p>Or contact via the GitHub profile: <a href="https://github.com/sapyx" target="_blank">github.com/sapyx</a></p>
+
+</main>
+
+<footer>
+  <p>
+    <a href="https://sapyx.github.io/pinterest-mcp/">Pinterest MCP Server</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/sapyx/pinterest-mcp">GitHub</a>
+  </p>
+</footer>
+
+</body>
+</html>
