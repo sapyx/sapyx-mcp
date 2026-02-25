@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pinterest MCP Server</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:    #e60023;
+      --dark:   #111;
+      --gray:   #555;
+      --light:  #f8f4f2;
+      --border: #e8e0dd;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #fff;
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    /* ── HERO ── */
+    header {
+      background: var(--red);
+      color: #fff;
+      text-align: center;
+      padding: 72px 24px 64px;
+    }
+
+    .logo {
+      width: 56px;
+      height: 56px;
+      background: #fff;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .logo svg { width: 32px; height: 32px; fill: var(--red); }
+
+    header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: .88;
+      max-width: 520px;
+      margin: 0 auto 32px;
+    }
+
+    .btn-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: .95rem;
+      text-decoration: none;
+      transition: opacity .15s, transform .15s;
+    }
+    .btn:hover { opacity: .85; transform: translateY(-1px); }
+
+    .btn-white  { background: #fff; color: var(--red); }
+    .btn-outline { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.6); }
+
+    /* ── SECTIONS ── */
+    section { padding: 72px 24px; max-width: 960px; margin: 0 auto; }
+
+    h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .subtitle { color: var(--gray); margin-bottom: 40px; font-size: .95rem; }
+
+    /* features grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--light);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .card-icon {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+    }
+
+    .card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+    .card p  { font-size: .9rem; color: var(--gray); }
+
+    /* tools table */
+    .tool-group { margin-bottom: 32px; }
+    .tool-group h3 {
+      font-size: .8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--red);
+      margin-bottom: 10px;
+    }
+
+    .tool-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+
+    .tool-item {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      background: var(--light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: .88rem;
+    }
+
+    .tool-name {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: .82rem;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .tool-desc { color: var(--gray); }
+
+    /* install block */
+    .install-box {
+      background: #1a1a1a;
+      color: #f0f0f0;
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: .88rem;
+      line-height: 1.8;
+    }
+
+    .install-box .comment { color: #888; }
+    .install-box .cmd { color: #7dd3fc; }
+    .install-box .arg { color: #a5f3a0; }
+
+    /* auth modes */
+    .auth-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 560px) { .auth-grid { grid-template-columns: 1fr; } }
+
+    .auth-card {
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .auth-card.featured { border-color: var(--red); }
+
+    .auth-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .auth-card .badge {
+      display: inline-block;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+
+    .badge-read  { background: #fef3c7; color: #92400e; }
+    .badge-write { background: #fce7f3; color: #9d174d; }
+
+    .auth-card p { font-size: .88rem; color: var(--gray); }
+
+    .env-block {
+      margin-top: 12px;
+      background: #f4f4f4;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: .8rem;
+      color: #333;
+    }
+
+    /* divider */
+    hr { border: none; border-top: 1px solid var(--border); }
+
+    /* footer */
+    footer {
+      text-align: center;
+      padding: 40px 24px;
+      font-size: .85rem;
+      color: var(--gray);
+      border-top: 1px solid var(--border);
+    }
+
+    footer a { color: var(--red); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/>
+    </svg>
+  </div>
+  <h1>Pinterest MCP Server</h1>
+  <p>Let Claude browse, create, and manage your Pinterest boards and pins — powered by the Model Context Protocol.</p>
+  <div class="btn-group">
+    <a class="btn btn-white" href="https://github.com/sapyx/pinterest-mcp">View on GitHub</a>
+    <a class="btn btn-outline" href="https://github.com/sapyx/pinterest-mcp#readme">Documentation</a>
+  </div>
+</header>
+
+<!-- FEATURES -->
+<section>
+  <h2>What it does</h2>
+  <p class="subtitle">Connect Claude to Pinterest and manage your content conversationally.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">📌</div>
+      <h3>Browse pins & boards</h3>
+      <p>List boards, sections, and pins with paginated results. View full pin details and image URLs.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🖼️</div>
+      <h3>Visual pin inspection</h3>
+      <p>Fetch any pin image directly into Claude as a viewable, analysable image content block.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">✏️</div>
+      <h3>Create & edit</h3>
+      <p>Create boards, sections, and pins from image URLs. Update titles, descriptions, alt text, and links.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔀</div>
+      <h3>Organise</h3>
+      <p>Move pins between boards and sections. Search across your pins by keyword.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔐</div>
+      <h3>OAuth 2.0</h3>
+      <p>Full OAuth flow with automatic token refresh. Or use a direct access token for read-only access.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h3>STDIO transport</h3>
+      <p>Zero-config integration with Claude Desktop and any MCP-compatible client via standard I/O.</p>
+    </div>
+  </div>
+</section>
+
+<hr />
+
+<!-- TOOLS -->
+<section>
+  <h2>14 MCP Tools</h2>
+  <p class="subtitle">Every tool is validated with Zod and returns structured content blocks.</p>
+
+  <div class="tool-group">
+    <h3>Auth</h3>
+    <ul class="tool-list">
+      <li class="tool-item"><span class="tool-name">pinterest_auth</span><span class="tool-desc">Start the OAuth 2.0 browser flow</span></li>
+      <li class="tool-item"><span class="tool-name">pinterest_auth_status</span><span class="tool-desc">Check token validity and expiry</span></li>
+    </ul>
+  </div>
+
+  <div class="tool-group">
+    <h3>Boards</h3>
+    <ul class="tool-list">
+      <li class="tool-item"><span class="tool-name">list_boards</span><span class="tool-desc">List all boards for the authenticated user</span></li>
+      <li class="tool-item"><span class="tool-name">create_board</span><span class="tool-desc">Create a new board with optional privacy setting</span></li>
+      <li class="tool-item"><span class="tool-name">list_board_sections</span><span class="tool-desc">List sections within a board</span></li>
+      <li class="tool-item"><span class="tool-name">create_board_section</span><span class="tool-desc">Add a new section to an existing board</span></li>
+    </ul>
+  </div>
+
+  <div class="tool-group">
+    <h3>Pins</h3>
+    <ul class="tool-list">
+      <li class="tool-item"><span class="tool-name">list_pins</span><span class="tool-desc">List pins on a board or section</span></li>
+      <li class="tool-item"><span class="tool-name">get_pin</span><span class="tool-desc">Get full details and image URLs for a pin</span></li>
+      <li class="tool-item"><span class="tool-name">get_pin_image</span><span class="tool-desc">Fetch a pin image as a viewable base64 block</span></li>
+      <li class="tool-item"><span class="tool-name">update_pin</span><span class="tool-desc">Edit title, description, alt text, or link</span></li>
+      <li class="tool-item"><span class="tool-name">move_pin</span><span class="tool-desc">Move a pin to a different board or section</span></li>
+      <li class="tool-item"><span class="tool-name">create_pin</span><span class="tool-desc">Create a new pin from a public image URL</span></li>
+    </ul>
+  </div>
+
+  <div class="tool-group">
+    <h3>Search &amp; User</h3>
+    <ul class="tool-list">
+      <li class="tool-item"><span class="tool-name">search_pins</span><span class="tool-desc">Search pins by keyword with pagination</span></li>
+      <li class="tool-item"><span class="tool-name">get_user_profile</span><span class="tool-desc">Retrieve the authenticated user's profile</span></li>
+    </ul>
+  </div>
+</section>
+
+<hr />
+
+<!-- INSTALL -->
+<section>
+  <h2>Installation</h2>
+  <p class="subtitle">Requires Node.js 20+.</p>
+  <div class="install-box">
+    <span class="comment"># Clone and build</span><br/>
+    <span class="cmd">git clone</span> <span class="arg">https://github.com/sapyx/pinterest-mcp.git</span><br/>
+    <span class="cmd">cd</span> pinterest-mcp<br/>
+    <span class="cmd">npm install</span><br/>
+    <span class="cmd">npm run build</span><br/>
+    <br/>
+    <span class="comment"># Copy env template and add your credentials</span><br/>
+    <span class="cmd">cp</span> .env.example .env
+  </div>
+</section>
+
+<hr />
+
+<!-- AUTH -->
+<section>
+  <h2>Authentication</h2>
+  <p class="subtitle">Choose one mode. Both cannot be active simultaneously.</p>
+  <div class="auth-grid">
+    <div class="auth-card">
+      <h3>Direct Token</h3>
+      <span class="badge badge-read">Read-only</span>
+      <p>Generate a static token from the Pinterest Developer Portal. No browser interaction needed.</p>
+      <div class="env-block">PINTEREST_ACCESS_TOKEN=pina_...</div>
+    </div>
+    <div class="auth-card featured">
+      <h3>OAuth 2.0</h3>
+      <span class="badge badge-write">Full access</span>
+      <p>Full read + write access with automatic token refresh. Trigger via the <code>pinterest_auth</code> tool.</p>
+      <div class="env-block">PINTEREST_APP_ID=...<br/>PINTEREST_APP_SECRET=...</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>
+    Built with <a href="https://modelcontextprotocol.io">Model Context Protocol</a> &amp;
+    <a href="https://developers.pinterest.com">Pinterest API v5</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/sapyx/pinterest-mcp">GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/sapyx/pinterest-mcp/tree/master/docs">Docs</a>
+  </p>
+</footer>
+
+</body>
+</html>
