@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "pinterest": {
+      "command": "node",
+      "args": ["C:\\path\\to\\pinterest-mcp\\build\\index.js"],
+      "env": {
+        "PINTEREST_APP_ID": "your_app_id",
+        "PINTEREST_APP_SECRET": "your_app_secret"
+      }
+    }
+  }
+}

@@ -3,3 +3,4 @@ build/
 .env
 *.js.map
 .claude/
+.mcp.json
