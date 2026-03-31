@@ -111,19 +111,38 @@ async function pinterestRequest<T>(
   const response = await fetch(url.toString(), options);
 
   if (!response.ok) {
-    // 429 Rate Limited — respect Retry-After header, retry up to 3 times
+    // 429 Rate Limited — use x-ratelimit-reset to know exactly when the window resets
     if (response.status === 429) {
-      const retryAfter = parseInt(response.headers.get("Retry-After") ?? "60", 10);
-      rateLimitedUntil = Date.now() + retryAfter * 1000;
+      const limitHeader   = response.headers.get("x-ratelimit-limit");
+      const remaining     = response.headers.get("x-ratelimit-remaining");
+      const resetHeader   = response.headers.get("x-ratelimit-reset");
+      const retryAfter    = response.headers.get("Retry-After");
+
+      // Prefer x-ratelimit-reset (Unix timestamp) over Retry-After (seconds delta)
+      let waitMs: number;
+      if (resetHeader) {
+        const resetAt = parseInt(resetHeader, 10) * 1000;
+        waitMs = Math.max(resetAt - Date.now(), 1000);
+      } else if (retryAfter) {
+        waitMs = parseInt(retryAfter, 10) * 1000;
+      } else {
+        throw new Error("Pinterest API rate limit raggiunto: nessun header di reset ricevuto.");
+      }
+
+      rateLimitedUntil = Date.now() + waitMs;
+
+      const waitSec = Math.ceil(waitMs / 1000);
+      const limitInfo = limitHeader ? ` (limit: ${limitHeader}, remaining: ${remaining ?? "0"})` : "";
+      console.error(`[api] Rate limited${limitInfo}. Reset in ${waitSec}s (attempt ${retryCount + 1}/3)`);
+
       if (retryCount < 3) {
-        console.error(`[api] Rate limited. Retry in ${retryAfter}s (attempt ${retryCount + 1}/3)`);
-        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
         rateLimitedUntil = 0;
         return pinterestRequest<T>(method, path, body, queryParams, retryCount + 1);
       }
       throw new Error(
         `Pinterest API rate limit raggiunto. Tutti i tentativi esauriti (3/3). ` +
-        `Attendi circa ${retryAfter} secondi prima di riprovare.`
+        `Attendi circa ${waitSec} secondi prima di riprovare.`
       );
     }
 
