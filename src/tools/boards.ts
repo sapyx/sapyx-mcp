@@ -45,7 +45,6 @@ export function registerBoardTools(server: McpServer, scopes: Set<string>): void
 
           return { content: [{ type: "text" as const, text: lines.join("\n") }] };
         } catch (error) {
-          const msg = error instanceof Error ? error.message : String(error);
           return handleToolError(error);
         }
       },

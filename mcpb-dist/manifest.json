@@ -1,0 +1,56 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
+  "name": "pinterest-mcp",
+  "version": "1.0.0",
+  "description": "Manage Pinterest boards, pins, and analytics directly from Claude.",
+  "author": { "name": "Pinterest MCP" },
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"],
+      "env": {
+        "PINTEREST_APP_ID": "${user_config.appId}",
+        "PINTEREST_APP_SECRET": "${user_config.appSecret}",
+        "PINTEREST_ACCESS_TOKEN": "${user_config.accessToken}",
+        "PINTEREST_FORCE_OAUTH": "${user_config.forceOauth}"
+      }
+    }
+  },
+  "user_config": {
+    "appId": {
+      "type": "string",
+      "title": "Pinterest App ID",
+      "description": "Your Pinterest App ID (from developers.pinterest.com). Required for OAuth authentication.",
+      "sensitive": true,
+      "required": false
+    },
+    "appSecret": {
+      "type": "string",
+      "title": "Pinterest App Secret",
+      "description": "Your Pinterest App Secret. Required for OAuth authentication.",
+      "sensitive": true,
+      "required": false
+    },
+    "accessToken": {
+      "type": "string",
+      "title": "Pinterest Access Token (optional)",
+      "description": "Direct access token for read-only use. Leave empty to use OAuth with App ID + Secret.",
+      "sensitive": true,
+      "required": false
+    },
+    "forceOauth": {
+      "type": "string",
+      "title": "Force OAuth (optional)",
+      "description": "Set to 'true' to always use OAuth even if an Access Token is set.",
+      "required": false,
+      "default": "false"
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=1.0.0",
+    "platforms": ["darwin", "win32", "linux"]
+  }
+}
