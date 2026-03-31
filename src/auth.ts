@@ -324,6 +324,15 @@ export class AuthRequiredError extends Error {
   }
 }
 
+// --------------- Logout ---------------
+
+/**
+ * Clears stored OAuth tokens, effectively logging out the user.
+ */
+export function logout(): void {
+  clearTokens();
+}
+
 // --------------- Public API ---------------
 
 /**

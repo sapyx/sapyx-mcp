@@ -9,7 +9,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node build/index.js"
+    "start": "node build/index.js",
+    "build:mcpb": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=mcpb-dist/server/index.js --format=esm && mcpb pack mcpb-dist/ pinterest-mcp.mcpb"
   },
   "files": [
     "build"
@@ -21,7 +22,9 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@anthropic-ai/mcpb": "^2.1.2",
     "@types/node": "^22.0.0",
+    "esbuild": "^0.27.4",
     "typescript": "^5.7.0"
   },
   "engines": {

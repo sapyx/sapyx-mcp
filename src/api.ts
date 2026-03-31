@@ -14,6 +14,7 @@ import type {
   PinAnalyticsResponse,
   PinUpdate,
   PinterestApiError,
+  TopPinsAnalyticsResponse,
   UserAccount,
   UserAnalyticsResponse,
 } from "./types.js";
@@ -22,6 +23,29 @@ const API_BASE = process.env.PINTEREST_SANDBOX === "true"
   ? "https://api-sandbox.pinterest.com/v5"
   : "https://api.pinterest.com/v5";
 
+// --------------- In-Memory TTL Cache ---------------
+
+const CACHE_TTL_MS = Number(process.env.PINTEREST_CACHE_TTL_S ?? 60) * 1000;
+
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+
+const requestCache = new Map<string, CacheEntry<unknown>>();
+let rateLimitedUntil = 0;
+
+function buildCacheKey(path: string, queryParams?: Record<string, string>): string {
+  const sortedParams = queryParams
+    ? Object.entries(queryParams)
+        .filter(([, v]) => v !== undefined && v !== "")
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => `${k}=${v}`)
+        .join("&")
+    : "";
+  return `GET:${path}?${sortedParams}`;
+}
+
 // --------------- Core Request ---------------
 
 async function pinterestRequest<T>(
@@ -29,7 +53,38 @@ async function pinterestRequest<T>(
   path: string,
   body?: Record<string, unknown>,
   queryParams?: Record<string, string>,
+  retryCount = 0,
 ): Promise<T> {
+  // --- Block if globally rate-limited ---
+  if (rateLimitedUntil > Date.now()) {
+    const waitSec = Math.ceil((rateLimitedUntil - Date.now()) / 1000);
+    throw new Error(
+      `Pinterest API in pausa per rate limit. Riprova tra circa ${waitSec} secondi.`
+    );
+  }
+
+  // --- Cache read (GET only) ---
+  if (method === "GET") {
+    const key = buildCacheKey(path, queryParams);
+    const entry = requestCache.get(key) as CacheEntry<T> | undefined;
+    if (entry && Date.now() < entry.expiresAt) {
+      console.error(`[api] cache hit  ${key}`);
+      return entry.value;
+    }
+    if (entry) requestCache.delete(key); // evict stale
+  }
+
+  // --- Cache invalidation (POST/PATCH/DELETE) ---
+  if (method !== "GET") {
+    const prefix = `GET:${path}`;
+    for (const key of requestCache.keys()) {
+      if (key === prefix || key.startsWith(prefix + "?") || key.startsWith(prefix + "/")) {
+        requestCache.delete(key);
+        console.error(`[api] cache inv  ${key}`);
+      }
+    }
+  }
+
   const token = await getValidAccessToken();
 
   const url = new URL(`${API_BASE}${path}`);
@@ -56,6 +111,30 @@ async function pinterestRequest<T>(
   const response = await fetch(url.toString(), options);
 
   if (!response.ok) {
+    // 429 Rate Limited — respect Retry-After header, retry up to 3 times
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get("Retry-After") ?? "60", 10);
+      rateLimitedUntil = Date.now() + retryAfter * 1000;
+      if (retryCount < 3) {
+        console.error(`[api] Rate limited. Retry in ${retryAfter}s (attempt ${retryCount + 1}/3)`);
+        await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
+        rateLimitedUntil = 0;
+        return pinterestRequest<T>(method, path, body, queryParams, retryCount + 1);
+      }
+      throw new Error(
+        `Pinterest API rate limit raggiunto. Tutti i tentativi esauriti (3/3). ` +
+        `Attendi circa ${retryAfter} secondi prima di riprovare.`
+      );
+    }
+
+    // 5xx Server Error — exponential backoff, retry up to 3 times
+    if (response.status >= 500 && retryCount < 3) {
+      const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+      console.error(`[api] Server error ${response.status}. Retrying in ${delay / 1000}s (attempt ${retryCount + 1}/3)`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return pinterestRequest<T>(method, path, body, queryParams, retryCount + 1);
+    }
+
     if (response.status === 401) {
       // Try to parse Pinterest's error body to distinguish token issues from scope/Trial restrictions.
       let body: PinterestApiError | null = null;
@@ -90,7 +169,16 @@ async function pinterestRequest<T>(
     return undefined as T;
   }
 
-  return (await response.json()) as T;
+  const data = (await response.json()) as T;
+
+  // --- Cache write (GET only) ---
+  if (method === "GET") {
+    const key = buildCacheKey(path, queryParams);
+    requestCache.set(key, { value: data, expiresAt: Date.now() + CACHE_TTL_MS });
+    console.error(`[api] cache set  ${key} (TTL ${CACHE_TTL_MS / 1000}s)`);
+  }
+
+  return data;
 }
 
 // --------------- Paginated Request ---------------
@@ -285,6 +373,21 @@ export async function getUserAnalytics(
     end_date: endDate,
     metric_types: metricTypes.join(","),
   });
+}
+
+export async function getUserTopPins(
+  startDate: string,
+  endDate: string,
+  sortBy: string,
+  numOfPins?: number,
+): Promise<TopPinsAnalyticsResponse> {
+  const params: Record<string, string> = {
+    start_date: startDate,
+    end_date: endDate,
+    sort_by: sortBy,
+  };
+  if (numOfPins) params.num_of_pins = String(numOfPins);
+  return pinterestRequest<TopPinsAnalyticsResponse>("GET", "/user_account/analytics/top_pins", undefined, params);
 }
 
 // --------------- Image Fetcher ---------------

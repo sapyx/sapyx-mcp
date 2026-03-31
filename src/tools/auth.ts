@@ -3,7 +3,7 @@
 // ============================================================
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { startOAuthFlow, getAuthStatus } from "../auth.js";
+import { startOAuthFlow, getAuthStatus, logout } from "../auth.js";
 
 export function registerAuthTools(server: McpServer): void {
   // --- pinterest_auth ---
@@ -22,6 +22,27 @@ export function registerAuthTools(server: McpServer): void {
         console.error("[pinterest_auth] Error:", msg);
         return {
           content: [{ type: "text" as const, text: `Authentication failed: ${msg}` }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // --- pinterest_logout ---
+  server.tool(
+    "pinterest_logout",
+    "Disconnect your Pinterest account by clearing stored OAuth tokens.",
+    {},
+    async () => {
+      try {
+        logout();
+        return {
+          content: [{ type: "text" as const, text: "Successfully disconnected from Pinterest. Use pinterest_auth to reconnect." }],
+        };
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return {
+          content: [{ type: "text" as const, text: `Logout failed: ${msg}` }],
           isError: true,
         };
       }

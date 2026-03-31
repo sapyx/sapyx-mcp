@@ -97,10 +97,9 @@ export interface PinUpdate {
 
 export interface CreatePinRequest {
   board_id: string;
-  media_source: {
-    source_type: "image_url";
-    url: string;
-  };
+  media_source:
+    | { source_type: "image_url"; url: string }
+    | { source_type: "image_base64"; content_type: string; data: string };
   title?: string;
   description?: string;
   alt_text?: string;
@@ -186,6 +185,22 @@ export interface UserAnalyticsResponse {
     lifetime_metrics: Record<string, number>;
     summary_metrics: Record<string, number>;
   };
+}
+
+// === Top Pins Analytics ===
+
+export interface TopPinsAnalyticsItem {
+  pin_id: string;
+  [metric: string]: string | number;
+}
+
+export interface TopPinsAnalyticsResponse {
+  date_availability: {
+    latest_available_timestamp: string;
+    is_realtime: boolean;
+  };
+  sort_by: string;
+  pins: TopPinsAnalyticsItem[];
 }
 
 // === API Error ===

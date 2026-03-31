@@ -13,9 +13,10 @@ import {
   savePin,
   createPin,
   getPinAnalytics,
+  getUserTopPins,
   fetchImageAsBase64,
 } from "../api.js";
-import type { ImageSizeKey, Pin } from "../types.js";
+import type { ImageSizeKey, Pin, TopPinsAnalyticsResponse } from "../types.js";
 import { handleToolError } from "./utils.js";
 
 /** Format a pin summary for listing */
@@ -279,30 +280,76 @@ export function registerPinTools(server: McpServer, scopes: Set<string>): void {
   if (canWrite) {
     server.tool(
       "create_pin",
-      "Create a new pin from an image URL.",
+      "Create a new pin from an image URL or base64-encoded image data.",
       {
         board_id: z.string().describe("Board ID to pin to"),
-        image_url: z.string().describe("Source image URL"),
+        image_url: z.string().optional().describe("Source image URL (use this OR image_base64)"),
+        image_base64: z.string().optional().describe("Base64-encoded image data (use this OR image_url)"),
+        content_type: z.string().optional().describe("MIME type for base64 image, e.g. image/jpeg (required with image_base64)"),
         title: z.string().max(100).optional().describe("Pin title (max 100 chars)"),
         description: z.string().max(800).optional().describe("Pin description (max 800 chars)"),
         alt_text: z.string().max(500).optional().describe("Alt text for accessibility (max 500 chars)"),
         link: z.string().optional().describe("Destination link URL"),
         board_section_id: z.string().optional().describe("Board section ID"),
       },
-      async ({ board_id, image_url, title, description, alt_text, link, board_section_id }) => {
+      async ({ board_id, image_url, image_base64, content_type, title, description, alt_text, link, board_section_id }) => {
         try {
-          const data: Record<string, unknown> = {
-            board_id,
-            media_source: { source_type: "image_url", url: image_url },
-          };
-          if (title) data.title = title;
-          if (description) data.description = description;
-          if (alt_text) data.alt_text = alt_text;
-          if (link) data.link = link;
-          if (board_section_id) data.board_section_id = board_section_id;
+          if (!image_url && !image_base64) {
+            return { content: [{ type: "text" as const, text: "Provide either image_url or image_base64." }], isError: true };
+          }
 
-          const pin = await createPin(data as any);
+          const media_source = image_base64
+            ? { source_type: "image_base64" as const, content_type: content_type ?? "image/jpeg", data: image_base64 }
+            : { source_type: "image_url" as const, url: image_url! };
+
+          const pin = await createPin({
+            board_id,
+            media_source,
+            title,
+            description,
+            alt_text,
+            link,
+            board_section_id,
+          });
           return { content: [{ type: "text" as const, text: `Pin created successfully:\n${formatPinDetails(pin)}` }] };
+        } catch (error) {
+          return handleToolError(error);
+        }
+      },
+    );
+  }
+
+  // --- get_top_pins ---
+  if (scopes.has("user_accounts:read")) {
+    server.tool(
+      "get_top_pins",
+      "Get your top performing pins ranked by a metric (engagement, impressions, clicks, saves).",
+      {
+        start_date: z.string().describe("Start date (YYYY-MM-DD)"),
+        end_date: z.string().describe("End date (YYYY-MM-DD)"),
+        sort_by: z
+          .enum(["ENGAGEMENT", "IMPRESSION", "OUTBOUND_CLICK", "REPIN", "SAVE"])
+          .describe("Metric to rank pins by"),
+        num_of_pins: z.number().min(1).max(100).optional().describe("Number of top pins to return (1-100, default 10)"),
+      },
+      async ({ start_date, end_date, sort_by, num_of_pins }) => {
+        try {
+          const data: TopPinsAnalyticsResponse = await getUserTopPins(start_date, end_date, sort_by, num_of_pins ?? 10);
+
+          if (!data.pins || data.pins.length === 0) {
+            return { content: [{ type: "text" as const, text: "No top pins data available for the selected period." }] };
+          }
+
+          const lines: string[] = [`Top Pins by ${sort_by} — ${start_date} to ${end_date}:`];
+          data.pins.forEach((item, i) => {
+            const metrics = Object.entries(item)
+              .filter(([k]) => k !== "pin_id")
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(", ");
+            lines.push(`  ${i + 1}. [${item.pin_id}] ${metrics}`);
+          });
+
+          return { content: [{ type: "text" as const, text: lines.join("\n") }] };
         } catch (error) {
           return handleToolError(error);
         }
