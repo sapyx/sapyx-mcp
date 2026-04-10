@@ -2,6 +2,7 @@
 // Pinterest API v5 — Typed HTTP Client
 // ============================================================
 
+import { createHash } from "node:crypto";
 import { getValidAccessToken, AuthRequiredError } from "./auth.js";
 import type {
   Board,
@@ -410,6 +411,19 @@ export async function getUserTopPins(
 }
 
 // --------------- Image Fetcher ---------------
+
+/**
+ * Fetches an image from a URL and returns its SHA-256 hash.
+ * Used for duplicate image detection.
+ */
+export async function fetchImageHash(imageUrl: string): Promise<string> {
+  const response = await fetch(imageUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image (${response.status}): ${imageUrl}`);
+  }
+  const buffer = await response.arrayBuffer();
+  return createHash("sha256").update(Buffer.from(buffer)).digest("hex");
+}
 
 /**
  * Fetches an image from a URL and returns it as base64.
